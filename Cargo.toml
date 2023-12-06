@@ -1,0 +1,26 @@
+[package]
+name = "midas-rs"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "midas_rs"
+crate-type = ["cdylib", "lib"]
+
+[dependencies]
+color-eyre = "0.6.2"
+log = "0.4.20"
+polars = { version = "0.35.4", features = ["dtype-categorical", "temporal", "performant", "parquet"], default-features = false }
+polars-io = { version = "0.35.4", features = ["parquet"] }
+pretty_env_logger = "0.5.0"
+pyo3 = { version = "0.20.0", features = ["eyre"] }
+rayon = "1.8.0"
+
+[dev-dependencies]
+tempfile = "3.8.1"
+
+[profile.release]
+opt-level = 3
+
+[profile.dev.package.backtrace]
+opt-level = 3
