@@ -19,11 +19,15 @@ fn get_symbol(row: &str) -> String {
 }
 
 #[pyclass]
-#[derive(FromPyObject)]
+#[derive(Debug, FromPyObject)]
 pub struct DownloadArgs {
+    #[pyo3(get)]
     date: String,
+    #[pyo3(get)]
     ticker: String,
+    #[pyo3(get)]
     capacity: usize,
+    #[pyo3(get)]
     skip: HashSet<String>,
 }
 

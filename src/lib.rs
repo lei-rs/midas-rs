@@ -1,7 +1,7 @@
 use color_eyre::Result;
 use pyo3::types::PyModule;
-use pyo3::{pyfunction, pymodule, wrap_pyfunction, PyResult, Python};
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use pyo3::{pyfunction, pymodule, wrap_pyfunction, PyObject, PyRef, PyResult, Python};
+use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
 use self::splitter::DownloadArgs;
 
@@ -9,12 +9,19 @@ mod product;
 mod splitter;
 
 #[pyfunction]
-pub fn download(args: DownloadArgs, base_dir: &str) -> Result<()> {
+pub fn download(args: PyRef<DownloadArgs>, base_dir: &str) -> Result<()> {
+    println!("Downloading {:?}", args);
     args.download(base_dir)
 }
 
 #[pyfunction]
-pub fn par_download(args: Vec<DownloadArgs>, base_dir: &str, n_workers: usize) -> Result<()> {
+pub fn par_download(
+    py: Python<'_>,
+    args: PyObject,
+    base_dir: &str,
+    n_workers: usize,
+) -> Result<()> {
+    let args = args.extract::<Vec<DownloadArgs>>(py)?;
     rayon::ThreadPoolBuilder::new()
         .num_threads(n_workers)
         .build_global()?;
@@ -27,5 +34,6 @@ pub fn par_download(args: Vec<DownloadArgs>, base_dir: &str, n_workers: usize) -
 fn midas_rs(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<DownloadArgs>()?;
     m.add_function(wrap_pyfunction!(download, m)?)?;
+    m.add_function(wrap_pyfunction!(par_download, m)?)?;
     Ok(())
 }
