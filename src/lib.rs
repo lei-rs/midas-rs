@@ -1,7 +1,7 @@
 use color_eyre::Result;
 use pyo3::types::PyModule;
 use pyo3::{pyfunction, pymodule, wrap_pyfunction, PyObject, PyRef, PyResult, Python};
-use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 use self::splitter::DownloadArgs;
 
@@ -10,7 +10,6 @@ mod splitter;
 
 #[pyfunction]
 pub fn download(args: PyRef<DownloadArgs>, base_dir: &str) -> Result<()> {
-    println!("Downloading {:?}", args);
     args.download(base_dir)
 }
 
