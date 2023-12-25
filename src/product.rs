@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 use std::error::Error;
-use std::fs::OpenOptions;
+use std::fs::{File, OpenOptions};
 use std::path::PathBuf;
 use std::rc::Rc;
 use std::str::FromStr;
@@ -12,7 +12,7 @@ use polars::datatypes::CategoricalChunkedBuilder;
 use polars::frame::DataFrame;
 use polars::prelude::NamedFromOwned;
 use polars::series::{IntoSeries, Series};
-use polars_io::parquet::ParquetWriter;
+use polars_io::parquet::{BatchedWriter, ParquetWriter};
 
 type Row<'a> = [&'a str; 15];
 
@@ -133,6 +133,7 @@ pub(crate) struct Product {
     path: PathBuf,
     capacity: usize,
     columns: Columns,
+    writer: Option<BatchedWriter<File>>,
 }
 
 impl Product {
@@ -142,6 +143,7 @@ impl Product {
             path,
             capacity,
             columns,
+            writer: None,
         }
     }
 
@@ -187,24 +189,37 @@ impl Product {
         std::mem::swap(&mut self.columns, &mut cols);
         let series = cols.into_cols();
         let mut df = DataFrame::new(series)?;
-        let file = match path.exists() {
-            true => OpenOptions::new().append(true).open(path)?,
-            false => OpenOptions::new().create(true).write(true).open(path)?,
+        let writer = if let Some(writer) = &mut self.writer {
+            writer
+        } else {
+            let file = OpenOptions::new()
+                .create(true)
+                .write(true)
+                .truncate(true)
+                .open(path)?;
+            let writer = ParquetWriter::new(file).batched(&df.schema())?;
+            self.writer = Some(writer);
+            self.writer.as_mut().unwrap()
         };
-        ParquetWriter::new(file).finish(&mut df)?;
-        Ok(())
+        writer
+            .write_batch(&mut df)
+            .map_err(|e| eyre!("Failed to write batch: {e:?}"))
     }
 }
 
 impl Drop for Product {
     fn drop(&mut self) {
         let _ = self.write();
+        if let Some(writer) = &mut self.writer {
+            let _ = writer.finish();
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use std::io::{self, BufRead, BufReader};
+    use std::path::Path;
 
     use tempfile::tempdir;
 
@@ -221,9 +236,10 @@ mod tests {
         color_eyre::install()?;
         pretty_env_logger::init();
 
-        let out_dir = tempdir()?;
+        //let out_dir = tempdir()?;
+        let out_dir = Path::new("./test_data");
         let reader = test_iter("spxw.csv");
-        let mut product = Product::new(out_dir.path().join("test.parquet"), 10000);
+        let mut product = Product::new(out_dir.join("test.parquet"), 10);
         for row in reader {
             product.push(&row?)?;
         }
