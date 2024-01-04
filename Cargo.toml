@@ -10,8 +10,8 @@ crate-type = ["cdylib", "lib"]
 [dependencies]
 color-eyre = "0.6.2"
 log = "0.4.20"
-polars = { version = "0.35.4", features = ["dtype-categorical", "temporal", "performant", "parquet"], default-features = false }
-polars-io = { version = "0.35.4", features = ["parquet"] }
+polars = { version = "0.36.2", features = ["dtype-categorical", "temporal", "performant", "parquet"], default-features = false }
+polars-io = { version = "0.36.2", features = ["parquet"] }
 pretty_env_logger = "0.5.0"
 pyo3 = { version = "0.20.0", features = ["eyre"] }
 rayon = "1.8.0"
