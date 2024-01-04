@@ -11,7 +11,7 @@ image = modal.Image.from_registry("rust:latest", add_python="3.10").pip_install(
 def build():
     os.system("""
         cd /root/midas-rs
-        maturin build --release --strip
+        maturin build --release --strip 
     """)
     ret = {}
     wheels = glob.glob("/root/midas-rs/target/wheels/*.whl")
