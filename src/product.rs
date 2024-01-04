@@ -159,7 +159,7 @@ impl Product {
         };
         match row {
             Ok(row) => self.columns.push(row)?,
-            Err(e) => warn!("Failed to parse row: {e:?}"),
+            Err(e) => println!("Failed to parse row: {e:?}"),
         };
         Ok(())
     }
